@@ -8,6 +8,7 @@ import Dashboard     from './pages/Dashboard.jsx';
 import Leaderboard   from './pages/Leaderboard.jsx';
 import RegisterMatch from './pages/RegisterMatch.jsx';
 import PlayerProfile from './pages/PlayerProfile.jsx';
+import AdminPanel    from './pages/AdminPanel.jsx';
 
 function App() {
   const [page, setPage]               = useState('login');
