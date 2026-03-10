@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './styles/chessTheme.css';
 
-import Navbar        from './components/Navbar';
-import Login         from './pages/Login';
-import Signup        from './pages/Signup';
-import Dashboard     from './pages/Dashboard';
-import Leaderboard   from './pages/Leaderboard';
-import RegisterMatch from './pages/RegisterMatch';
-import PlayerProfile from './pages/PlayerProfile';
+import Navbar        from './components/Navbar.jsx';
+import Login         from './pages/Login.jsx';
+import Signup        from './pages/Signup.jsx';
+import Dashboard     from './pages/Dashboard.jsx';
+import Leaderboard   from './pages/Leaderboard.jsx';
+import RegisterMatch from './pages/RegisterMatch.jsx';
+import PlayerProfile from './pages/PlayerProfile.jsx';
 
 function App() {
   const [page, setPage]               = useState('login');
