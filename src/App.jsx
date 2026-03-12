@@ -22,9 +22,10 @@ function App() {
     const savedUser  = localStorage.getItem('user');
     if (savedToken && savedUser) {
       try {
+        const parsedUser = JSON.parse(savedUser);
         setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-        setPage('dashboard');
+        setUser(parsedUser);
+        setPage(parsedUser.isAdmin ? 'admin' : 'dashboard'); // Admins go to admin panel
       } catch (_) {
         localStorage.clear();
       }
@@ -34,7 +35,9 @@ function App() {
   const handleLoginSuccess = (userData, tokenData) => {
     setUser(userData);
     setToken(tokenData);
-    setPage('dashboard');
+    localStorage.setItem('token', tokenData);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setPage(userData.isAdmin ? 'admin' : 'dashboard');
   };
 
   const handleLogout = () => {
@@ -71,6 +74,13 @@ function App() {
         return <RegisterMatch user={user} token={token} onNavigate={navigate} />;
       case 'profile':
         return <PlayerProfile user={user} token={token} profileChessID={profileTarget} onNavigate={navigate} />;
+      case 'admin':
+        // Only allow access if user is admin
+        if (user?.isAdmin) {
+          return <AdminPanel onNavigate={navigate} />;
+        } else {
+          return <Dashboard user={user} token={token} onNavigate={navigate} />;
+        }
       default:
         return <Login onLoginSuccess={handleLoginSuccess} onNavigate={navigate} />;
     }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { API_BASE_URL } from '../config.js';
+import { API_BASE_URL } from '../config.jsx';
 
 // ── Admin Login ────────────────────────────────────────────────────────
 const AdminLogin = ({ onLoginSuccess }) => {
