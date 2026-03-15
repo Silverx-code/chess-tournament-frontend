@@ -16,17 +16,17 @@ function App() {
   const [token, setToken]             = useState(null);
   const [profileTarget, setProfileTarget] = useState(null);
 
-  // Restore session from localStorage on mount
+  // Restore login session
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser  = localStorage.getItem('user');
     if (savedToken && savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
-        setToken(savedToken);
         setUser(parsedUser);
-        setPage(parsedUser.isAdmin ? 'admin' : 'dashboard'); // Admins go to admin panel
-      } catch (_) {
+        setToken(savedToken);
+        setPage('dashboard');
+      } catch {
         localStorage.clear();
       }
     }
@@ -37,7 +37,7 @@ function App() {
     setToken(tokenData);
     localStorage.setItem('token', tokenData);
     localStorage.setItem('user', JSON.stringify(userData));
-    setPage(userData.isAdmin ? 'admin' : 'dashboard');
+    setPage('dashboard');
   };
 
   const handleLogout = () => {
@@ -48,15 +48,22 @@ function App() {
     setPage('login');
   };
 
-  // Navigate with optional payload (e.g., profile chessID)
   const navigate = (dest, payload = null) => {
     setProfileTarget(null);
     if (dest === 'profile' && payload) setProfileTarget(payload);
-    // Redirect to login if not authenticated
-    if (!user && !['login','signup'].includes(dest)) {
+
+    // admin page has its own login — always allow access
+    if (dest === 'admin') {
+      setPage('admin');
+      return;
+    }
+
+    // block unauthenticated users from other protected pages
+    if (!user && !['login', 'signup'].includes(dest)) {
       setPage('login');
       return;
     }
+
     setPage(dest);
   };
 
@@ -75,22 +82,17 @@ function App() {
       case 'profile':
         return <PlayerProfile user={user} token={token} profileChessID={profileTarget} onNavigate={navigate} />;
       case 'admin':
-        // Only allow access if user is admin
-        if (user?.isAdmin) {
-          return <AdminPanel onNavigate={navigate} />;
-        } else {
-          return <Dashboard user={user} token={token} onNavigate={navigate} />;
-        }
+        return <AdminPanel onNavigate={navigate} />;
       default:
         return <Login onLoginSuccess={handleLoginSuccess} onNavigate={navigate} />;
     }
   };
 
-  const showNav = !['login','signup'].includes(page);
+  const showNavbar = !['login', 'signup', 'admin'].includes(page);
 
   return (
     <div className="app-wrapper">
-      {showNav && (
+      {showNavbar && (
         <Navbar
           currentPage={page}
           user={user}
