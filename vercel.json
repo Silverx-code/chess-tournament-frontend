@@ -2,8 +2,5 @@
   "buildCommand": "npx vite build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install",
-  "engines": {
-    "node": "18.x"
-  }
+  "installCommand": "npm install"
 }
