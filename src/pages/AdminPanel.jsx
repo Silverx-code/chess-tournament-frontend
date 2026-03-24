@@ -261,6 +261,159 @@ const SuspendModal = ({ user, token, onDone, onClose }) => {
   );
 };
 
+
+// ── Fixture Manager ────────────────────────────────────────────────────
+const FixtureManager = ({ token }) => {
+  const [fixtures, setFixtures] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [form, setForm] = useState({
+    player1ChessID: '', player2ChessID: '',
+    scheduledDate: '', round: 1, notes: '',
+  });
+  const [error, setError]     = useState('');
+  const [success, setSuccess] = useState('');
+  const [saving, setSaving]   = useState(false);
+
+  const fetchFixtures = async () => {
+    setLoading(true);
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/fixtures`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (Array.isArray(data)) setFixtures(data.sort((a,b) => new Date(a.scheduledDate) - new Date(b.scheduledDate)));
+    } catch (_) {}
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchFixtures(); }, []);
+
+  const handleCreate = async e => {
+    e.preventDefault();
+    if (!form.player1ChessID || !form.player2ChessID || !form.scheduledDate) {
+      setError('All fields except notes are required.'); return;
+    }
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/fixtures`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setSuccess('Fixture created!');
+      setForm({ player1ChessID: '', player2ChessID: '', scheduledDate: '', round: form.round, notes: '' });
+      fetchFixtures();
+    } catch (err) { setError(err.message); }
+    setSaving(false);
+  };
+
+  const handleDelete = async id => {
+    if (!window.confirm('Delete this fixture?')) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/fixtures/${id}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchFixtures();
+    } catch (_) {}
+  };
+
+  const statusColor = status => ({
+    scheduled: '#64b5f6', completed: 'var(--green-bright)', postponed: '#ff9800',
+  }[status] || 'var(--white-dim)');
+
+  return (
+    <div>
+      {/* Create fixture form */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <p className="section-label" style={{ marginBottom: 16 }}>Create New Fixture</p>
+        {error   && <div className="alert alert-error">{error}</div>}
+        {success && <div className="alert alert-success">✓ {success}</div>}
+        <form onSubmit={handleCreate}>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Player 1 Chess ID</label>
+              <input className="form-input" placeholder="e.g. SilverChess" value={form.player1ChessID}
+                onChange={e => setForm(p => ({ ...p, player1ChessID: e.target.value }))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Player 2 Chess ID</label>
+              <input className="form-input" placeholder="e.g. MagicChess" value={form.player2ChessID}
+                onChange={e => setForm(p => ({ ...p, player2ChessID: e.target.value }))} />
+            </div>
+          </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Scheduled Date</label>
+              <input className="form-input" type="datetime-local" value={form.scheduledDate}
+                onChange={e => setForm(p => ({ ...p, scheduledDate: e.target.value }))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Round</label>
+              <input className="form-input" type="number" min="1" value={form.round}
+                onChange={e => setForm(p => ({ ...p, round: e.target.value }))} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Notes (optional)</label>
+            <input className="form-input" placeholder="e.g. Must be played before 10pm" value={form.notes}
+              onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? <span className="spinner" /> : '+ Create Fixture'}
+          </button>
+        </form>
+      </div>
+
+      {/* Fixtures list */}
+      <div className="card" style={{ padding: 0 }}>
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center' }}><span className="spinner" style={{ width: 28, height: 28 }} /></div>
+        ) : fixtures.length === 0 ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--white-dim)' }}>No fixtures yet.</div>
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Player 1</th>
+                  <th>Player 2</th>
+                  <th>Round</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fixtures.map(f => (
+                  <tr key={f._id}>
+                    <td style={{ fontWeight: 600 }}>{f.player1ChessID}</td>
+                    <td style={{ fontWeight: 600 }}>{f.player2ChessID}</td>
+                    <td style={{ color: 'var(--white-dim)' }}>Round {f.round}</td>
+                    <td style={{ fontSize: 12, color: 'var(--white-dim)' }}>
+                      {new Date(f.scheduledDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    </td>
+                    <td>
+                      <span style={{ color: statusColor(f.status), textTransform: 'capitalize', fontSize: 13 }}>
+                        {f.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button style={{ padding: '5px 12px', fontSize: 11, background: 'rgba(198,40,40,0.1)', color: '#ef5350', border: '1px solid rgba(198,40,40,0.3)', borderRadius: 4, cursor: 'pointer' }}
+                        onClick={() => handleDelete(f._id)}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ── Main Admin Panel ───────────────────────────────────────────────────
 const AdminPanel = ({ onNavigate }) => {
   const [adminUser, setAdminUser]   = useState(null);
@@ -380,9 +533,9 @@ const AdminPanel = ({ onNavigate }) => {
 
       {/* Tabs */}
       <div className="flex gap-3 animate-up-delay-2" style={{ marginBottom: 20 }}>
-        {['users', 'matches'].map(t => (
+        {['users', 'matches', 'fixtures'].map(t => (
           <button key={t} className={`btn ${tab === t ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: 12 }} onClick={() => setTab(t)}>
-            {t === 'users' ? `♟ Players (${totalPlayers})` : `📋 Matches (${totalMatches})`}
+            {t === 'users' ? `♟ Players (${totalPlayers})` : t === 'matches' ? `📋 Matches (${totalMatches})` : '📅 Fixtures'}
           </button>
         ))}
         <button className="btn btn-ghost" style={{ fontSize: 12, marginLeft: 'auto' }} onClick={fetchData}>↻ Refresh</button>
@@ -510,6 +663,13 @@ const AdminPanel = ({ onNavigate }) => {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Fixtures Tab */}
+      {tab === 'fixtures' && (
+        <div className="animate-up-delay-2">
+          <FixtureManager token={adminToken} />
         </div>
       )}
     </div>

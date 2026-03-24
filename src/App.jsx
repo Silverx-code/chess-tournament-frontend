@@ -6,6 +6,7 @@ import Login         from './pages/Login.jsx';
 import Signup        from './pages/Signup.jsx';
 import Dashboard     from './pages/Dashboard.jsx';
 import Leaderboard   from './pages/Leaderboard.jsx';
+import League        from './pages/League.jsx';
 import RegisterMatch from './pages/RegisterMatch.jsx';
 import PlayerProfile from './pages/PlayerProfile.jsx';
 import AdminPanel    from './pages/AdminPanel.jsx';
@@ -16,19 +17,15 @@ function App() {
   const [token, setToken]             = useState(null);
   const [profileTarget, setProfileTarget] = useState(null);
 
-  // Restore login session
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser  = localStorage.getItem('user');
     if (savedToken && savedUser) {
       try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
+        setUser(JSON.parse(savedUser));
         setToken(savedToken);
         setPage('dashboard');
-      } catch {
-        localStorage.clear();
-      }
+      } catch { localStorage.clear(); }
     }
   }, []);
 
@@ -51,40 +48,22 @@ function App() {
   const navigate = (dest, payload = null) => {
     setProfileTarget(null);
     if (dest === 'profile' && payload) setProfileTarget(payload);
-
-    // admin page has its own login — always allow access
-    if (dest === 'admin') {
-      setPage('admin');
-      return;
-    }
-
-    // block unauthenticated users from other protected pages
-    if (!user && !['login', 'signup'].includes(dest)) {
-      setPage('login');
-      return;
-    }
-
+    if (dest === 'admin') { setPage('admin'); return; }
+    if (!user && !['login', 'signup'].includes(dest)) { setPage('login'); return; }
     setPage(dest);
   };
 
   const renderPage = () => {
     switch (page) {
-      case 'login':
-        return <Login onLoginSuccess={handleLoginSuccess} onNavigate={navigate} />;
-      case 'signup':
-        return <Signup onSignupSuccess={handleLoginSuccess} onNavigate={navigate} />;
-      case 'dashboard':
-        return <Dashboard user={user} token={token} onNavigate={navigate} />;
-      case 'leaderboard':
-        return <Leaderboard user={user} token={token} onNavigate={navigate} />;
-      case 'register':
-        return <RegisterMatch user={user} token={token} onNavigate={navigate} />;
-      case 'profile':
-        return <PlayerProfile user={user} token={token} profileChessID={profileTarget} onNavigate={navigate} />;
-      case 'admin':
-        return <AdminPanel onNavigate={navigate} />;
-      default:
-        return <Login onLoginSuccess={handleLoginSuccess} onNavigate={navigate} />;
+      case 'login':    return <Login onLoginSuccess={handleLoginSuccess} onNavigate={navigate} />;
+      case 'signup':   return <Signup onSignupSuccess={handleLoginSuccess} onNavigate={navigate} />;
+      case 'dashboard':return <Dashboard user={user} token={token} onNavigate={navigate} />;
+      case 'leaderboard': return <Leaderboard user={user} token={token} onNavigate={navigate} />;
+      case 'league':   return <League user={user} token={token} onNavigate={navigate} />;
+      case 'register': return <RegisterMatch user={user} token={token} onNavigate={navigate} />;
+      case 'profile':  return <PlayerProfile user={user} token={token} profileChessID={profileTarget} onNavigate={navigate} />;
+      case 'admin':    return <AdminPanel onNavigate={navigate} />;
+      default:         return <Login onLoginSuccess={handleLoginSuccess} onNavigate={navigate} />;
     }
   };
 
@@ -93,12 +72,7 @@ function App() {
   return (
     <div className="app-wrapper">
       {showNavbar && (
-        <Navbar
-          currentPage={page}
-          user={user}
-          onNavigate={navigate}
-          onLogout={handleLogout}
-        />
+        <Navbar currentPage={page} user={user} onNavigate={navigate} onLogout={handleLogout} />
       )}
       {renderPage()}
     </div>
