@@ -24,6 +24,10 @@ const Navbar = ({ currentPage = '', user = null, onNavigate = () => {}, onLogout
                 onClick={e => { e.preventDefault(); onNavigate('leaderboard'); }}>Leaderboard</a>
             </li>
             <li>
+              <a href="#" className={currentPage === 'chat' ? 'active' : ''}
+                onClick={e => { e.preventDefault(); onNavigate('chat'); }}>💬 Chat</a>
+            </li>
+            <li>
               <a href="#" className={currentPage === 'register' ? 'active' : ''}
                 onClick={e => { e.preventDefault(); onNavigate('register'); }}>+ Match</a>
             </li>
@@ -32,7 +36,8 @@ const Navbar = ({ currentPage = '', user = null, onNavigate = () => {}, onLogout
                 onClick={e => { e.preventDefault(); onNavigate('profile'); }}>{user.chessID}</a>
             </li>
             <li>
-              <a href="#" className="btn-nav-auth" onClick={e => { e.preventDefault(); onLogout(); }}>Logout</a>
+              <a href="#" className="btn-nav-auth"
+                onClick={e => { e.preventDefault(); onLogout(); }}>Logout</a>
             </li>
           </>
         ) : (

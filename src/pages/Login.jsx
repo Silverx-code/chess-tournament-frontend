@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../config.jsx';
 
 const Login = ({ onLoginSuccess, onNavigate }) => {
-  const [form, setForm] = useState({ chessID: '', password: '' });
-  const [error, setError] = useState('');
+  const [form, setForm]     = useState({ chessID: '', password: '' });
+  const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = e => {
@@ -19,7 +19,7 @@ const Login = ({ onLoginSuccess, onNavigate }) => {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/login`, {
+      const res  = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chessID: form.chessID.trim(), password: form.password }),
@@ -74,6 +74,15 @@ const Login = ({ onLoginSuccess, onNavigate }) => {
                 onChange={handleChange}
                 autoComplete="current-password"
               />
+              <div style={{ textAlign: 'right', marginTop: 6 }}>
+                <a
+                  href="#"
+                  style={{ fontSize: 12, color: 'var(--green-bright)', textDecoration: 'none' }}
+                  onClick={e => { e.preventDefault(); onNavigate('forgot-password'); }}
+                >
+                  Forgot password?
+                </a>
+              </div>
             </div>
 
             <button
