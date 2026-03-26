@@ -265,48 +265,71 @@ const SuspendModal = ({ user, token, onDone, onClose }) => {
 // ── Fixture Manager ────────────────────────────────────────────────────
 const FixtureManager = ({ token }) => {
   const [fixtures, setFixtures] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // CREATE FORM
   const [form, setForm] = useState({
-    player1ChessID: '', player2ChessID: '',
-    scheduledDate: '', round: 1, notes: '',
+    player1ChessID: '',
+    player2ChessID: '',
+    scheduledDate: '',
+    round: 1,
+    notes: ''
   });
 
-  // UPDATE STATE
-  const [selectedFixtureId, setSelectedFixtureId] = useState('');
   const [updateForm, setUpdateForm] = useState({
     player1ChessID: '',
     player2ChessID: '',
     scheduledDate: '',
     round: 1,
     status: 'scheduled',
-    notes: '',
+    notes: ''
   });
 
-  const [error, setError]     = useState('');
-  const [success, setSuccess] = useState('');
-  const [saving, setSaving]   = useState(false);
+  const [selectedFixtureId, setSelectedFixtureId] = useState('');
+  const [saving, setSaving] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  // FETCH
+  // ── FETCH USERS ─────────────────────────────
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setUsers(data);
+    } catch (_) {}
+  };
+
+  // ── FETCH FIXTURES ──────────────────────────
   const fetchFixtures = async () => {
     setLoading(true);
     try {
-      const res  = await fetch(`${API_BASE_URL}/api/fixtures`, {
+      const res = await fetch(`${API_BASE_URL}/api/fixtures`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
       if (Array.isArray(data)) {
-        setFixtures(data.sort((a,b) => new Date(a.scheduledDate) - new Date(b.scheduledDate)));
+        setFixtures(
+          data.sort(
+            (a, b) =>
+              new Date(a.scheduledDate) - new Date(b.scheduledDate)
+          )
+        );
       }
     } catch (_) {}
     setLoading(false);
   };
 
-  useEffect(() => { fetchFixtures(); }, []);
+  useEffect(() => {
+    if (token) {
+      fetchFixtures();
+      fetchUsers();
+    }
+  }, [token]);
 
-  // AUTO-FILL UPDATE FORM
+  // ── AUTO-FILL UPDATE FORM ───────────────────
   useEffect(() => {
     if (!selectedFixtureId) return;
 
@@ -323,7 +346,7 @@ const FixtureManager = ({ token }) => {
     });
   }, [selectedFixtureId, fixtures]);
 
-  // CREATE
+  // ── CREATE ──────────────────────────────────
   const handleCreate = async e => {
     e.preventDefault();
 
@@ -332,7 +355,9 @@ const FixtureManager = ({ token }) => {
       return;
     }
 
-    setSaving(true); setError(''); setSuccess('');
+    setSaving(true);
+    setError('');
+    setSuccess('');
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/fixtures`, {
@@ -364,7 +389,7 @@ const FixtureManager = ({ token }) => {
     setSaving(false);
   };
 
-  // UPDATE
+  // ── UPDATE ──────────────────────────────────
   const handleUpdate = async e => {
     e.preventDefault();
     if (!selectedFixtureId) return;
@@ -374,17 +399,20 @@ const FixtureManager = ({ token }) => {
     setSuccess('');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/fixtures/${selectedFixtureId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...updateForm,
-          round: Number(updateForm.round)
-        }),
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/api/fixtures/${selectedFixtureId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            ...updateForm,
+            round: Number(updateForm.round)
+          }),
+        }
+      );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
@@ -398,7 +426,7 @@ const FixtureManager = ({ token }) => {
     setUpdating(false);
   };
 
-  // DELETE
+  // ── DELETE ──────────────────────────────────
   const handleDelete = async id => {
     if (!window.confirm('Delete this fixture?')) return;
 
@@ -418,43 +446,91 @@ const FixtureManager = ({ token }) => {
       <div className="card" style={{ marginBottom: 24 }}>
         <p className="section-label">Create New Fixture</p>
 
+        {error && <div className="alert alert-error">{error}</div>}
+        {success && <div className="alert alert-success">{success}</div>}
+
         <form onSubmit={handleCreate}>
           <div className="grid-2">
-            <input className="form-input" placeholder="Player 1"
+            <select
+              className="form-input"
               value={form.player1ChessID}
-              onChange={e => setForm(p => ({ ...p, player1ChessID: e.target.value }))} />
+              onChange={e =>
+                setForm(p => ({ ...p, player1ChessID: e.target.value }))
+              }
+            >
+              <option value="">Select Player 1</option>
+              {users.map(u => (
+                <option
+                  key={u.chessID}
+                  value={u.chessID}
+                  disabled={u.chessID === form.player2ChessID}
+                >
+                  {u.chessID} ({u.name})
+                </option>
+              ))}
+            </select>
 
-            <input className="form-input" placeholder="Player 2"
+            <select
+              className="form-input"
               value={form.player2ChessID}
-              onChange={e => setForm(p => ({ ...p, player2ChessID: e.target.value }))} />
+              onChange={e =>
+                setForm(p => ({ ...p, player2ChessID: e.target.value }))
+              }
+            >
+              <option value="">Select Player 2</option>
+              {users.map(u => (
+                <option
+                  key={u.chessID}
+                  value={u.chessID}
+                  disabled={u.chessID === form.player1ChessID}
+                >
+                  {u.chessID} ({u.name})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid-2">
-            <input type="datetime-local" className="form-input"
+            <input
+              type="datetime-local"
+              className="form-input"
               value={form.scheduledDate}
-              onChange={e => setForm(p => ({ ...p, scheduledDate: e.target.value }))} />
+              onChange={e =>
+                setForm(p => ({ ...p, scheduledDate: e.target.value }))
+              }
+            />
 
-            <input type="number" className="form-input"
+            <input
+              type="number"
+              className="form-input"
               value={form.round}
-              onChange={e => setForm(p => ({ ...p, round: Number(e.target.value) }))} />
+              onChange={e =>
+                setForm(p => ({ ...p, round: Number(e.target.value) }))
+              }
+            />
           </div>
 
-          <input className="form-input" placeholder="Notes"
+          <input
+            className="form-input"
+            placeholder="Notes"
             value={form.notes}
-            onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+            onChange={e =>
+              setForm(p => ({ ...p, notes: e.target.value }))
+            }
+          />
 
           <button className="btn btn-primary" disabled={saving}>
-            {saving ? <span className="spinner" /> : '+ Create'}
+            {saving ? '...' : '+ Create'}
           </button>
         </form>
       </div>
 
-      {/* DROPDOWN */}
+      {/* SELECT */}
       <div className="card">
         <p className="section-label">Manage Fixtures</p>
 
         {loading ? (
-          <div className="spinner" />
+          <div>Loading...</div>
         ) : (
           <select
             className="form-input"
@@ -478,44 +554,103 @@ const FixtureManager = ({ token }) => {
 
           <form onSubmit={handleUpdate}>
             <div className="grid-2">
-              <input className="form-input"
+              <select
+                className="form-input"
                 value={updateForm.player1ChessID}
-                onChange={e => setUpdateForm(p => ({ ...p, player1ChessID: e.target.value }))} />
+                onChange={e =>
+                  setUpdateForm(p => ({
+                    ...p,
+                    player1ChessID: e.target.value
+                  }))
+                }
+              >
+                {users.map(u => (
+                  <option key={u.chessID} value={u.chessID}>
+                    {u.chessID} ({u.name})
+                  </option>
+                ))}
+              </select>
 
-              <input className="form-input"
+              <select
+                className="form-input"
                 value={updateForm.player2ChessID}
-                onChange={e => setUpdateForm(p => ({ ...p, player2ChessID: e.target.value }))} />
+                onChange={e =>
+                  setUpdateForm(p => ({
+                    ...p,
+                    player2ChessID: e.target.value
+                  }))
+                }
+              >
+                {users.map(u => (
+                  <option key={u.chessID} value={u.chessID}>
+                    {u.chessID} ({u.name})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid-2">
-              <input type="datetime-local" className="form-input"
+              <input
+                type="datetime-local"
+                className="form-input"
                 value={updateForm.scheduledDate || ''}
-                onChange={e => setUpdateForm(p => ({ ...p, scheduledDate: e.target.value }))} />
+                onChange={e =>
+                  setUpdateForm(p => ({
+                    ...p,
+                    scheduledDate: e.target.value
+                  }))
+                }
+              />
 
-              <input type="number" className="form-input"
+              <input
+                type="number"
+                className="form-input"
                 value={updateForm.round}
-                onChange={e => setUpdateForm(p => ({ ...p, round: Number(e.target.value) }))} />
+                onChange={e =>
+                  setUpdateForm(p => ({
+                    ...p,
+                    round: Number(e.target.value)
+                  }))
+                }
+              />
             </div>
 
-            <select className="form-input"
+            <select
+              className="form-input"
               value={updateForm.status}
-              onChange={e => setUpdateForm(p => ({ ...p, status: e.target.value }))}>
+              onChange={e =>
+                setUpdateForm(p => ({
+                  ...p,
+                  status: e.target.value
+                }))
+              }
+            >
               <option value="scheduled">Scheduled</option>
               <option value="completed">Completed</option>
               <option value="postponed">Postponed</option>
             </select>
 
-            <input className="form-input"
+            <input
+              className="form-input"
               value={updateForm.notes}
-              onChange={e => setUpdateForm(p => ({ ...p, notes: e.target.value }))} />
+              onChange={e =>
+                setUpdateForm(p => ({
+                  ...p,
+                  notes: e.target.value
+                }))
+              }
+            />
 
             <div className="flex gap-3 mt-3">
               <button className="btn btn-primary" disabled={updating}>
-                {updating ? <span className="spinner" /> : 'Update'}
+                {updating ? '...' : 'Update'}
               </button>
 
-              <button type="button" className="btn btn-ghost"
-                onClick={() => handleDelete(selectedFixtureId)}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => handleDelete(selectedFixtureId)}
+              >
                 Delete
               </button>
             </div>
